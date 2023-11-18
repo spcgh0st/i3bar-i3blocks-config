@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"io/ioutil"
 	"encoding/json"
+	"time"
 )
 
 type conditionObject struct {
@@ -43,8 +44,10 @@ type weatherResponse struct {
 
 func main() {
 
+	const apiKey string = "REPLACE_WITH_API_KEY"
+
 	res, err := http.Get("https://api.weatherapi.com/v1/forecast.json?key=" +
-		"REPLACE_WITH_API_KEY" + "&q=Buenos%Aires&days=2&aqi=no&alerts=no")
+		apiKey + "&q=Buenos%Aires&days=2&aqi=no&alerts=no")
 
 	if err != nil {
 		os.Exit(1)
@@ -58,9 +61,28 @@ func main() {
 
 	_ = json.Unmarshal([]byte(resBody), &weather)
 
-	fmt.Printf("<span foreground=\"cyan\">Current:</span> %s, %.1f°C ᛫ <span foreground=\"cyan\">Today:</span> %s, %.0f/%.0f°C ᛫ <span foreground=\"cyan\">Tomorrow:</span> %s, %.0f/%.0f°C\n",
+	fmt.Printf("%s, %.1f°C ᛫ %s ᛫ %s\n",
 		weather.Current.Condition.Text, weather.Current.Temp, 
-		weather.Forecast.ForecastDay[0].Day.Condition.Text, weather.Forecast.ForecastDay[0].Day.MaxTemp, weather.Forecast.ForecastDay[0].Day.MinTemp,
-		weather.Forecast.ForecastDay[1].Day.Condition.Text, weather.Forecast.ForecastDay[1].Day.MaxTemp, weather.Forecast.ForecastDay[1].Day.MinTemp )
+		formatForecastDay(weather, 0),
+		formatForecastDay(weather, 1))
+
+}
+
+
+
+
+func formatForecastDay(weather weatherResponse, index int) string {
+
+	condition := weather.Forecast.ForecastDay[index].Day.Condition.Text
+	maxTemp := weather.Forecast.ForecastDay[index].Day.MaxTemp
+	minTemp := weather.Forecast.ForecastDay[index].Day.MinTemp
+
+	date, _ := time.Parse("2006-01-02", weather.Forecast.ForecastDay[index].Date)
+
+	return fmt.Sprintf("<span foreground=\"cyan\">%s:</span> %s, %.0f/%.0f°C",
+		date.Format("Monday"),
+		condition,
+		maxTemp,
+		minTemp)
 
 }
